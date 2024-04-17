@@ -1,0 +1,110 @@
+.wrapper {
+    height: 100%;
+    display: flex;
+    gap: 40px;
+    padding-bottom: 100px;
+    .sidebar {
+        flex: 2;
+        text-align: center;
+        h2 {
+            color: white;
+            margin: 50px 0px;
+        }
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            button {
+                color: white;
+                font-size: 1.3rem;
+                width: 85%;
+                padding: 11px;
+                background-color: #141e27;
+                border-radius: 10px;
+                cursor: pointer;
+                transition: all 0.2s;
+                &:hover {
+                    width: 95%;
+                    padding: 14px;
+                    background-color: #1c2935;
+                }
+                &.active {
+                    width: 100%;
+                    padding: 14px;
+                    color: #77e94d;
+                    border: 3px solid #77e94d;
+                }
+            }
+        }
+    }
+    .content {
+        flex: 9;
+        .location {
+            height: 75px;
+            padding: 25px;
+            text-align: center;
+            border-bottom: 2px solid #313d48;
+            p {
+                color: white;
+                font-size: 1.2rem;
+            }
+        }
+        .show-times {
+            padding: 50px 20px;
+            &.show-times + .show-times {
+                padding-top: 10px;
+            }
+            .date {
+                position: relative;
+                width: 280px;
+                padding: 7px 40px;
+                color: white;
+                background-color: #cd6363;
+                &::after {
+                    content: '';
+                    background-color: inherit;
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    right: -15px;
+                    width: 40px;
+                    transform: skewX(30deg);
+                }
+            }
+            .times {
+                display: flex;
+                gap: 10px;
+                padding: 15px 30px;
+                background-color: #00000055;
+                border-left: 8px solid #cd6363;
+                .time {
+                    padding: 20px 10px;
+                    font-size: 1.2rem;
+                    font-weight: 700;
+                    color: black;
+                    text-align: center;
+                    background-color: #87e864;
+                    cursor: pointer;
+                    transition: 0.4s;
+                    &:hover {
+                        color: white;
+                        background-color: #cd6363;
+                    }
+                }
+            }
+        }
+    }
+    .film {
+        flex: 3;
+        h1 {
+            color: white;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+        img {
+            width: 100%;
+        }
+    }
+}

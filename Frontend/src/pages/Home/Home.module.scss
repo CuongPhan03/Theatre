@@ -1,0 +1,187 @@
+.wrapper {
+    .top {
+        width: 100%;
+        height: 64px;
+        background: url('https://cinestar.com.vn/catalog/view/theme/default/images/pattern.png') repeat center top;
+        margin: 1.5rem 0px;
+        border-radius: 10px;
+        > div {
+            display: flex;
+            justify-content: space-between;
+            > ul {
+                display: flex;
+                gap: 30px;
+                list-style: none;
+                padding: 0;
+                p {
+                    font-weight: 700;
+                    color: rgb(230, 33, 98);
+                    display: block;
+                }
+                li:first-child {
+                    background: url('https://cinestar.com.vn/catalog/view/theme/default/images/icon-register.png')
+                        no-repeat left 1px;
+
+                    p {
+                        padding: 25px 30px 23px 71px;
+                    }
+                }
+                li:last-child {
+                    background: url('https://cinestar.com.vn/catalog/view/theme/default/images/icon-login.png')
+                        no-repeat left top;
+                    p {
+                        padding: 25px 0 23px 42px;
+                    }
+                }
+            }
+            .hotline {
+                font-family: 'Futurab';
+                font-weight: bold;
+                font-size: 30px;
+                color: #f37520;
+                background: url('https://cinestar.com.vn/catalog/view/theme/default/images/icon-call.png') no-repeat
+                    left 7px;
+                padding: 20px 1rem 0px 58px;
+            }
+        }
+    }
+    .welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: white;
+        }
+        div {
+            background: url('https://cinestar.com.vn/pictures/moi/9Logo/white-2018.png') no-repeat center;
+            background-size: contain;
+            height: 130px;
+            width: 300px;
+        }
+    }
+    .HomepageSlide {
+        width: 100%;
+        min-height: 300px;
+        background: url('https://cinestar.com.vn/pictures/Tin%20t%E1%BB%A9c/Nangluongmattroi/cinestar-hue.jpg') top
+            center / cover no-repeat;
+        padding-top: 40%;
+        background-position: center;
+        width: 100%;
+        margin: 2rem auto;
+        box-shadow: 0 0 10px rgba(40, 10, 117, 0.094);
+        border-radius: 10px;
+    }
+    .content {
+        margin: 60px 10vw;
+        .wrap > h1 {
+            font-size: 2.3rem;
+            font-weight: 500;
+            width: max-content;
+            margin: 70px auto 30px;
+        }
+        .film-area {
+            > h1 {
+                color: #ecff12;
+                border-bottom: 4px solid #ecff12;
+            }
+            .films {
+                display: flex;
+                justify-content: space-between;
+                gap: 6vw;
+                &.hot .film-card {
+                    background-image: linear-gradient(80deg, #f4d03f 0%, #16a085 100%);
+                }
+                &.old .film-card {
+                    background-image: linear-gradient(75deg, #2b86c5 0%, #784ba0 50%, #ff3cac 100%);
+                }
+                .film-card {
+                    flex: 1;
+                    border-radius: 20px;
+                    overflow: hidden;
+                    img {
+                        width: 100%;
+                        aspect-ratio: 3/4;
+                    }
+                    h1 {
+                        height: 105px;
+                        font-size: 1.9rem;
+                        font-weight: 500;
+                        color: white;
+                        text-align: center;
+                        padding: 10px;
+                    }
+                }
+            }
+        }
+        .promotion-area {
+            > h1 {
+                color: #ffa530;
+                border-bottom: 4px solid #ffa530;
+            }
+            .promotion-card {
+                border-radius: 25px;
+                overflow: hidden;
+                background-image: linear-gradient(90deg, #fad961 0%, #f76b1c 100%);
+                img {
+                    width: 100%;
+                    height: 400px;
+                }
+                h1 {
+                    font-size: 1.9rem;
+                    font-weight: 500;
+                    color: white;
+                    text-align: center;
+                    padding: 10px;
+                    padding-bottom: 20px;
+                }
+            }
+            .bottom {
+                margin-top: 30px;
+                display: flex;
+                gap: 4vw;
+                .promotion-card {
+                    flex: 1;
+                }
+            }
+        }
+        .advantage {
+            margin: 80px 0px;
+            > h1 {
+                font-size: 3rem;
+                font-weight: 500;
+                color: #55ee48;
+                text-align: center;
+                margin-bottom: 25px;
+            }
+            ul {
+                list-style: none;
+                padding: 0;
+                li {
+                    margin-bottom: 50px;
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 12vw;
+                    .icon {
+                        flex: 1;
+                    }
+                    div {
+                        flex: 3;
+                        h2 {
+                            text-align: center;
+                            font-size: 1.9rem;
+                            color: #fff780;
+                            margin-bottom: 8px;
+                        }
+                        p {
+                            color: white;
+                            font-size: 1.3rem;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

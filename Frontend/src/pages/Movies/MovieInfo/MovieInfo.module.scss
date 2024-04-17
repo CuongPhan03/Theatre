@@ -1,0 +1,83 @@
+.wrapper {
+    padding: 25px 0;
+    display: flex;
+    gap: 35px;
+    .film-image {
+        min-width: 35vw;
+        border: 15px solid #93cdff99;
+    }
+    .content {
+        height: fit-content;
+        padding: 0px 40px;
+        background-color: steelblue;
+        color: white;
+        border-radius: 50px 0px;
+        .film-info {
+            h1 {
+                padding-top: 25px;
+                padding-bottom: 20px;
+                margin-bottom: 20px;
+                border-bottom: 3px solid #0f1f2f;
+            }
+            .info {
+                display: flex;
+                align-items: center;
+                margin-top: 10px;
+                .label {
+                    width: 120px;
+                    font-size: 1.2rem;
+                    font-weight: 300;
+                }
+                .value {
+                    color: black;
+                    font-size: 1.3rem;
+                    font-weight: 600;
+                    background-color: white;
+                    padding: 8px 30px;
+                    border-radius: 20px 0px;
+                }
+            }
+            .description {
+                font-size: 1.1rem;
+            }
+            img {
+                margin: 15px 0px;
+                width: 48px;
+                height: 48px;
+            }
+        }
+        .buttons {
+            padding-top: 45px;
+            padding-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            .trailer {
+                color: rgb(255, 73, 73);
+                font-size: 1.5rem;
+                font-weight: 600;
+                background-color: #00000066;
+                padding: 16px 30px;
+                border-radius: 30px;
+                cursor: pointer;
+                transition: 0.2s;
+                &:hover {
+                    background-color: #00000088;
+                }
+            }
+            .book {
+                color: white;
+                font-weight: 700;
+                font-size: 1.6rem;
+                background-color: #60bf3d;
+                padding: 12px 45px;
+                border-radius: 30px 0px;
+                cursor: pointer;
+                transition: 0.2s;
+                &:hover {
+                    background-color: #57ae38;
+                }
+            }
+        }
+    }
+}

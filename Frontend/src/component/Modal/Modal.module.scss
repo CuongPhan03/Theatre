@@ -1,0 +1,174 @@
+.wrapper {
+    position: fixed;
+    z-index: 5;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    background-color: #00000044;
+    .container {
+        margin: auto;
+        background-color: white;
+        border-radius: 10px;
+        overflow: hidden;
+        translate: 0 -30%;
+        opacity: 0;
+        animation: popup 0.4s ease-out forwards;
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+            &.read {
+                background-color: steelblue;
+            }
+            &.insert {
+                background-color: dodgerblue;
+            }
+            &.edit {
+                background-color: #ffe338;
+                h2 {
+                    color: black;
+                }
+                button {
+                    color: black;
+                }
+            }
+            &.delete {
+                background-color: #e65454;
+            }
+            h2 {
+                font-weight: 500;
+                color: white;
+            }
+            button {
+                margin-top: 4px;
+                color: white;
+                font-size: 2.1rem;
+                cursor: pointer;
+                transition: 0.2s;
+                &:hover {
+                    color: #666;
+                }
+            }
+        }
+        .content {
+            padding: 30px 20px;
+            p {
+                font-size: 1.1rem;
+                font-weight: 500;
+            }
+        }
+        .form {
+            max-height: 65vh;
+            width: max(38vw, 450px);
+            padding: 0px 15px 12px 20px;
+            overflow-y: overlay;
+            > h2 {
+                color: #666;
+                font-weight: 500;
+                text-align: center;
+                padding: 12px 0;
+            }
+            .row {
+                display: flex;
+                align-items: center;
+                margin-bottom: 18px;
+                > label {
+                    width: 160px;
+                    font-size: 1.1rem;
+                }
+                input,
+                select {
+                    flex: 1;
+                    font-size: 1.1rem;
+                    background-color: #e8f0fe;
+                    padding: 8px;
+                    border-radius: 5px;
+                }
+                select {
+                    cursor: pointer;
+                }
+                .gender {
+                    flex: 1;
+                    > label {
+                        font-size: 1.1rem;
+                        cursor: pointer;
+
+                        margin-right: 16%;
+                        &:last-child {
+                            margin-right: 0;
+                        }
+                    }
+                }
+            }
+            &::-webkit-scrollbar-track {
+                border-radius: 0px;
+                background-color: transparent;
+            }
+        }
+        footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 13px 20px;
+            border-top: 1px solid #ddd;
+            button {
+                font-size: 1.1rem;
+                color: white;
+                padding: 8px 13px;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: 0.2s;
+                &.cancel {
+                    background-color: #5e666c;
+                    &:hover {
+                        background-color: #495055;
+                    }
+                }
+                &.ok {
+                    background-color: #4887bb;
+                    &:hover {
+                        background-color: #3b6e98;
+                    }
+                }
+                &.insert {
+                    background-color: dodgerblue;
+                    &:hover {
+                        background-color: #1a77d5;
+                    }
+                }
+                &.submit {
+                    color: black;
+                    &.enable {
+                        background-color: #ffe338;
+                        &:hover {
+                            background-color: #e2cb34;
+                        }
+                    }
+                    &.disable {
+                        color: #666;
+                        background-color: #99a3aa;
+                        cursor: default;
+                    }
+                }
+                &.delete {
+                    padding: 8px 15px;
+                    background-color: #e65454;
+                    &:hover {
+                        background-color: #bd4848;
+                    }
+                }
+            }
+        }
+    }
+
+    @keyframes popup {
+        100% {
+            translate: 0 0;
+            opacity: 1;
+        }
+    }
+}

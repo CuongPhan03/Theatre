@@ -1,0 +1,105 @@
+.wrapper {
+    padding-bottom: 60px;
+    > button {
+        font-size: 1.1rem;
+        color: white;
+        background-color: dodgerblue;
+        padding: 15px 20px;
+        margin: 30px 0px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.2s;
+        &:hover {
+            background-color: #1a77d5;
+        }
+    }
+    .role {
+        margin-bottom: 100px;
+        &:nth-child(2) {
+            > h2 {
+                background-color: #60bf3d;
+            }
+            .wrap-table {
+                border: 1px solid #60bf3d;
+                border-left: 8px solid #60bf3d;
+            }
+        }
+        > h2 {
+            position: relative;
+            width: 400px;
+            padding: 7px 40px;
+            color: white;
+            background-color: steelblue;
+            &::after {
+                content: '';
+                background-color: inherit;
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                right: -15px;
+                width: 40px;
+                transform: skewX(30deg);
+            }
+        }
+        .wrap-table {
+            flex: 1;
+            border: 1px solid steelblue;
+            border-left: 8px solid steelblue;
+            background-color: #00000044;
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                text-align: center;
+                tr:first-child {
+                    background-color: #57657599;
+                    line-height: 2.8;
+                }
+                tr:not(:first-child) {
+                    border-top: 1px solid #57657599;
+                    line-height: 2.8;
+                    transition: 0.15s;
+                    &:hover {
+                        background-color: #57657533;
+                    }
+                }
+                td,
+                th {
+                    color: white;
+                    &:last-child {
+                        width: 200px;
+                        border-left: 2px solid #57657599;
+                    }
+                }
+                th {
+                    font-size: 1.2rem;
+                    font-weight: 500;
+                }
+                td {
+                    font-size: 1.1rem;
+                    &:last-child {
+                        .btn {
+                            color: white;
+                            font-size: 1.18rem;
+                            padding: 10px;
+                            margin: 0px 5px;
+                            cursor: pointer;
+                            transition: 0.2s;
+                            &.info {
+                                font-size: 1.34rem;
+                            }
+                        }
+                        .info:hover {
+                            color: steelblue;
+                        }
+                        .edit:hover {
+                            color: #eadb13;
+                        }
+                        .delete:hover {
+                            color: #f85151;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
