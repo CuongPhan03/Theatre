@@ -1,19 +1,19 @@
 const connection = require('../config/database');
 class moviesQuery {
     async getAllCategories() {
-        let [results] = await connection.query('SELECT ten_the_loai FROM THELOAI');
+        let [results] = await connection.query('SELECT ten_the_loai FROM theloai');
         return results;
     }
     async getFilmCategories(filmId) {
         let [results] = await connection.query(
-            `SELECT ten_the_loai FROM PHIM_THUOC_THELOAI 
+            `SELECT ten_the_loai FROM phim_thuoc_theloai 
              WHERE ma_phim = ?`,
             [filmId],
         );
         return results;
     }
     async getAllId() {
-        let [results] = await connection.query('SELECT ma_phim FROM PHIM');
+        let [results] = await connection.query('SELECT ma_phim FROM phim');
         return results;
     }
     async getSomeId(category, start, end) {
@@ -22,7 +22,7 @@ class moviesQuery {
     }
     async getFilm(filmId) {
         let [results] = await connection.query(
-            `SELECT ten, mo_ta FROM PHIM 
+            `SELECT ten, mo_ta FROM phim 
              WHERE ma_phim = ?`,
             [filmId],
         );
@@ -30,7 +30,7 @@ class moviesQuery {
     }
     async getFilmName(filmId) {
         let [results] = await connection.query(
-            `SELECT ten FROM PHIM 
+            `SELECT ten FROM phim 
              WHERE ma_phim = ?`,
             [filmId],
         );
@@ -38,7 +38,7 @@ class moviesQuery {
     }
     async getAllInfo(filmId) {
         let [results] = await connection.query(
-            `SELECT * FROM PHIM 
+            `SELECT * FROM phim 
              WHERE ma_phim = ?`,
             [filmId],
         );

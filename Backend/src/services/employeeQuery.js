@@ -3,14 +3,14 @@ const connection = require('../config/database');
 class employeeQuery {
     async getAllRole() {
         let [results] = await connection.query(
-            `SELECT loai_nhan_vien FROM NHANVIEN 
+            `SELECT loai_nhan_vien FROM nhanvien 
              GROUP BY loai_nhan_vien`,
         );
         return results;
     }
     async getRole(empId) {
         let [results] = await connection.query(
-            `SELECT loai_nhan_vien FROM NHANVIEN 
+            `SELECT loai_nhan_vien FROM nhanvien 
              WHERE ma_nhan_vien = ?`,
             [empId],
         );
@@ -20,23 +20,23 @@ class employeeQuery {
         let results = null;
         switch (role) {
             case 'Nhà quản lý':
-                results = await connection.query('SELECT * FROM NHAQUANLY ');
+                results = await connection.query('SELECT * FROM nhaquanly ');
                 break;
             case 'Nhân viên điều phối':
-                results = await connection.query('SELECT * FROM NHANVIENDIEUPHOI ');
+                results = await connection.query('SELECT * FROM nhanviendieuphoi ');
                 break;
             case 'Nhân viên quầy':
-                results = await connection.query('SELECT * FROM NHANVIENQUAY ');
+                results = await connection.query('SELECT * FROM nhanvienquay ');
                 break;
             case 'Nhân viên kỹ thuật':
-                results = await connection.query('SELECT * FROM NHANVIENKYTHUAT ');
+                results = await connection.query('SELECT * FROM nhanvienkythuat ');
                 break;
         }
         return results[0];
     }
     async getName(empId) {
         let [results] = await connection.query(
-            `SELECT ten FROM NHANVIEN 
+            `SELECT ten FROM nhanvien 
              WHERE ma_nhan_vien = ?`,
             [empId],
         );
@@ -44,7 +44,7 @@ class employeeQuery {
     }
     async getSomeInfo(empId) {
         let [results] = await connection.query(
-            `SELECT ma_nhan_vien, ten, gioi_tinh, sdt, rap_phu_trach, trang_thai FROM NHANVIEN  
+            `SELECT ma_nhan_vien, ten, gioi_tinh, sdt, rap_phu_trach, trang_thai FROM nhanvien  
              WHERE ma_nhan_vien = ?`,
             [empId],
         );
@@ -52,22 +52,22 @@ class employeeQuery {
     }
     async getAllInfo(empId) {
         let [result1] = await connection.query(
-            `SELECT * FROM NHANVIEN 
+            `SELECT * FROM nhanvien 
              WHERE ma_nhan_vien = ?`,
             [empId],
         );
         let [result2] = await connection.query(
-            `SELECT * FROM NHANVIEN_BANGCAP 
+            `SELECT * FROM nhanvien_bangcap 
              WHERE ma_nhan_vien = ?`,
             [empId],
         );
         let [result3] = await connection.query(
-            `SELECT * FROM NHANVIEN_DIACHI 
+            `SELECT * FROM nhanvien_diachi 
              WHERE ma_nhan_vien = ?`,
             [empId],
         );
         let [result4] = await connection.query(
-            `SELECT * FROM NHANVIEN_THOIGIANLAMVIEC 
+            `SELECT * FROM nhanvien_thoigianlamviec 
              WHERE ma_nhan_vien = ?`,
             [empId],
         );
@@ -107,37 +107,37 @@ class employeeQuery {
     }
     async updateEmployee(empData, certData, addrData, timeData) {
         await connection.query(`CALL CapnhatNhanVien(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`, empData);
-        const [result1] = await connection.query(`SELECT * FROM NHANVIEN_BANGCAP WHERE ma_nhan_vien = ?`, [empData[0]]);
+        const [result1] = await connection.query(`SELECT * FROM nhanvien_bangcap WHERE ma_nhan_vien = ?`, [empData[0]]);
         if (result1.length === 0)
-            await connection.query(`INSERT INTO NHANVIEN_BANGCAP VALUES(?, ?)`, [empData[0], certData]);
+            await connection.query(`INSERT INTO nhanvien_bangcap VALUES(?, ?)`, [empData[0], certData]);
         else
             await connection.query(
-                `UPDATE NHANVIEN_BANGCAP 
+                `UPDATE nhanvien_bangcap 
                 SET bang_cap = ?
                 WHERE ma_nhan_vien = ?`,
                 [certData, empData[0]],
             );
-        const [result2] = await connection.query(`SELECT * FROM NHANVIEN_DIACHI WHERE ma_nhan_vien = ?`, [empData[0]]);
+        const [result2] = await connection.query(`SELECT * FROM nhanvien_diachi WHERE ma_nhan_vien = ?`, [empData[0]]);
         if (result2.length === 0)
-            await connection.query(`INSERT INTO NHANVIEN_DIACHI VALUES(?, ?)`, [empData[0], addrData]);
+            await connection.query(`INSERT INTO nhanvien_diachi VALUES(?, ?)`, [empData[0], addrData]);
         else
             await connection.query(
-                `UPDATE NHANVIEN_DIACHI
+                `UPDATE nhanvien_diachi
                 SET dia_chi = ?
                 WHERE ma_nhan_vien = ?`,
                 [addrData, empData[0]],
             );
-        const [result3] = await connection.query(`SELECT * FROM NHANVIEN_THOIGIANLAMVIEC WHERE ma_nhan_vien = ?`, [
+        const [result3] = await connection.query(`SELECT * FROM nhanvien_thoigianlamviec WHERE ma_nhan_vien = ?`, [
             empData[0],
         ]);
         if (result3.length === 0)
-            await connection.query(`INSERT INTO NHANVIEN_THOIGIANLAMVIEC VALUES(?, ?, ?, ?)`, [
+            await connection.query(`INSERT INTO nhanvien_thoigianlamviec VALUES(?, ?, ?, ?)`, [
                 empData[0],
                 ...timeData,
             ]);
         else
             await connection.query(
-                `UPDATE NHANVIEN_THOIGIANLAMVIEC
+                `UPDATE nhanvien_thoigianlamviec
                 SET thu_trong_tuan = ?, tg_bat_dau = ?, tg_ket_thuc = ?
                 WHERE ma_nhan_vien = ?`,
                 [...timeData, empData[0]],
@@ -145,17 +145,17 @@ class employeeQuery {
     }
     async deleteEmployee(empId) {
         await connection.query(
-            `DELETE FROM NHANVIEN_BANGCAP 
+            `DELETE FROM nhanvien_bangcap 
              WHERE ma_nhan_vien = ?`,
             [empId],
         );
         await connection.query(
-            `DELETE FROM NHANVIEN_DIACHI 
+            `DELETE FROM nhanvien_diachi 
              WHERE ma_nhan_vien = ?`,
             [empId],
         );
         await connection.query(
-            `DELETE FROM NHANVIEN_THOIGIANLAMVIEC 
+            `DELETE FROM nhanvien_thoigianlamviec 
              WHERE ma_nhan_vien = ?`,
             [empId],
         );

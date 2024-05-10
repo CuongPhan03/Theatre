@@ -1,3 +1,5 @@
+CREATE DATABASE  IF NOT EXISTS `cinestar` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `cinestar`;
 -- MySQL dump 10.13  Distrib 8.0.34, for Win64 (x86_64)
 --
 -- Host: localhost    Database: cinestar
@@ -135,6 +137,65 @@ LOCK TABLES `hoadon_baogom_sanpham` WRITE;
 INSERT INTO `hoadon_baogom_sanpham` VALUES (10005,100,1),(10005,10000,1),(10006,10001,1),(10007,10002,1),(10012,10003,1),(10013,101,1),(10013,10004,1),(10014,102,1),(10014,10005,1),(10015,104,1),(10015,10006,1),(10016,103,2),(10016,10007,1),(10017,100,1),(10017,10008,1),(10018,10009,1),(10019,10010,1),(10020,10011,1),(10021,100,1),(10021,103,1),(10021,10012,1),(10022,104,2),(10022,10013,1),(10023,101,1),(10023,10014,1),(10024,102,1),(10024,10015,1),(10025,103,3),(10025,10016,1),(10026,100,2),(10026,10017,1),(10027,100,1),(10027,101,1),(10027,10018,1),(10028,10019,1),(10029,103,1),(10029,10020,1),(10032,100,1),(10032,101,1),(10032,10021,1),(10033,104,1),(10033,10022,1),(10034,103,1),(10034,10023,1),(10035,10024,1),(10036,10025,1),(10037,102,1),(10037,10026,1),(10038,102,1),(10038,10027,1),(10039,10028,1),(10040,10029,1),(10041,10030,1),(10042,100,1),(10042,10031,1),(10043,101,1),(10043,10032,1),(10044,104,2),(10044,10033,1),(10045,10034,1),(10046,101,3),(10046,10035,1),(10047,100,1),(10047,10036,1),(10048,101,1),(10048,102,1),(10048,10037,1),(10049,103,1),(10049,10038,1),(10050,104,1),(10050,10039,1),(10051,100,2),(10051,10040,1),(10052,100,1),(10052,101,1),(10052,10041,1),(10053,10042,1),(10054,102,1),(10054,10043,1),(10055,103,2),(10055,10044,1),(10056,10045,1),(10057,10046,1),(10058,10047,1),(10059,101,1),(10059,10048,1),(10167,100,1),(10167,10120,1),(10167,10121,1),(10167,10122,1),(10179,10124,1),(10180,100,1),(10180,10125,1),(10180,10126,1);
 /*!40000 ALTER TABLE `hoadon_baogom_sanpham` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `capnhathoadon` AFTER INSERT ON `hoadon_baogom_sanpham` FOR EACH ROW BEGIN
+  
+	DECLARE new_point INT;
+    SET new_point = 0;
+
+    IF EXISTS (select gia FROM doan WHERE id_doan = NEW.id_san_pham) THEN
+		BEGIN
+			-- Cap nhat tong gia hoa don moi khi them san pham -- 
+			SET @giatien := (SELECT gia FROM doan WHERE id_doan = NEW.id_san_pham);
+			SET @giatien := @giatien * NEW.so_luong;
+			UPDATE hoadon SET tong_gia = tong_gia + @giatien 
+							WHERE ma_hoa_don = NEW.ma_hoa_don;
+			
+			-- Cap nhat diem cong cho khach hang --
+			SELECT diem_cong INTO new_point FROM doan WHERE id_doan = NEW.id_san_pham;
+        END; 
+	ELSEIF EXISTS (select ma_ve_phim FROM vephim WHERE ma_ve_phim = NEW.id_san_pham) THEN
+		begin
+			-- Cap nhat tong gia hoa don moi khi them san pham -- 
+			SET @giatien := (SELECT gia FROM ghe
+	        	WHERE ma_so_ghe = (select ma_so_ghe FROM vephim WHERE ma_ve_phim = NEW.id_san_pham)
+				and ma_rap_phim = (select ma_rap_phim from vephim WHERE ma_ve_phim = NEW.id_san_pham)
+				and ma_so_phong = (select ma_so_phong from vephim WHERE ma_ve_phim = NEW.id_san_pham));
+			UPDATE hoadon SET tong_gia = tong_gia + @giatien
+							WHERE ma_hoa_don = NEW.ma_hoa_don;
+			
+			-- Cap nhat diem cong cho khach hang --
+			SELECT diem_cong INTO new_point
+	        FROM (vephim NATURAL JOIN ghe)
+	    	WHERE ma_ve_phim = NEW.id_san_pham;
+	    
+	    	-- Cap nhat tinh trang ghe --
+	    	update ghe set tinh_trang_ghe = 1
+	        	WHERE ma_so_ghe = (select ma_so_ghe FROM vephim WHERE ma_ve_phim = NEW.id_san_pham)
+				and ma_rap_phim = (select ma_rap_phim from vephim WHERE ma_ve_phim = NEW.id_san_pham)
+				and ma_so_phong = (select ma_so_phong from vephim WHERE ma_ve_phim = NEW.id_san_pham);
+        END; 
+	END IF;
+	
+	UPDATE KHACHHANG
+  	SET diem_tich_luy = diem_tich_luy + new_point
+ 	WHERE khachhang.ma_khach_hang = (select ma_khach_hang 
+		from hoadon where ma_hoa_don = NEW.ma_hoa_don);
+	
+  END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `khachhang`
@@ -189,7 +250,7 @@ CREATE TABLE `khuyenmai` (
 
 LOCK TABLES `khuyenmai` WRITE;
 /*!40000 ALTER TABLE `khuyenmai` DISABLE KEYS */;
-INSERT INTO `khuyenmai` VALUES ('12T12','Sale sập rạp','2023-12-11','2024-12-14',0.40,0,18),('20T10','Phụ nữ Việt Nam','2023-10-19','2024-10-21',0.00,20000,0),('30T4','30 tháng Tư','2023-04-28','2024-05-02',0.30,0,10),('TCK_2023_1','Thi cuối kỳ 231','2023-12-10','2024-12-20',0.30,15000,49),('TDL2024','Tết dương lịch 2024','2023-12-30','2024-01-02',0.20,10000,40);
+INSERT INTO `khuyenmai` VALUES ('12T12','Sale sập rạp','2023-12-11','2026-12-14',0.40,0,18),('20T10','Phụ nữ Việt Nam','2023-10-19','2026-10-21',0.00,20000,0),('30T4','30 tháng Tư','2023-04-28','2026-05-02',0.30,0,10),('TCK_2023_1','Thi cuối kỳ 231','2023-12-10','2026-12-20',0.30,15000,49),('TDL2024','Tết dương lịch 2024','2023-12-30','2026-01-02',0.20,10000,40);
 /*!40000 ALTER TABLE `khuyenmai` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -226,6 +287,160 @@ LOCK TABLES `nhanvien` WRITE;
 INSERT INTO `nhanvien` VALUES (122,'31203003601','Nguyễn Đức An','Nam','2003-12-22',10000000,'0123456688','HCM','Nhà quản lý',1),(124,'31203003603','Trần Lê Xuân Ánh','Khác','2002-02-01',5000000,'0123456550','TG','Nhà quản lý',1),(125,'31203003604','Đỗ Việt Vân Khanh','Nữ','2002-01-01',4000000,'0123456551','BD','Nhân viên điều phối',1),(126,'31203003605','Nguyễn Đức Anh','Nam','1999-12-22',10000000,'0123456566','BD','Nhà quản lý',1),(127,'31203003606','Nguyễn Việt Anh Nam','Nam','2002-01-07',7000000,'0123456567','BD','Nhân viên kỹ thuật',1),(128,'31203003607','Trần Lê Xuân','Nữ','2002-02-01',8000000,'0123456568','BD','Nhân viên quầy',1),(129,'31203003608','Đỗ Hải My','Nữ','2002-01-01',6000000,'0123456569','DL','Nhân viên điều phối',1),(130,'31203003609','Trương Thuận Hưng','Nam','1999-12-20',10000000,'0123456570','DL','Nhà quản lý',1),(131,'31203003610','Lê Đình Huy','Nam','2002-01-16',7000000,'0123456571','DL','Nhân viên kỹ thuật',1),(132,'31203003611','Trần Lê Xuân','Nữ','2002-02-01',8000000,'0123456572','DL','Nhân viên quầy',1),(133,'31203003612','Địch Lệ Nhiệt Ba','Nữ','2002-01-01',6000000,'0123456573','TTH','Nhân viên điều phối',1),(134,'31203003613','Lê Thị Bảo Thu','Nữ','1999-12-20',10000000,'0123456574','TTH','Nhà quản lý',1),(135,'31203003614','Trần Minh Hiếu','Nam','2002-01-16',7000000,'0123456575','TTH','Nhân viên kỹ thuật',1),(136,'31203003615','Trần Hồng Tài','Nữ','2002-02-01',8000000,'0123456576','TTH','Nhân viên quầy',1),(137,'31203003616','Nguyễn Thị Thu Hảo','Nữ','2002-02-01',1000000,'0123456577','TG','Nhân viên kỹ thuật',1),(138,'31203003617','Lê Minh Trung','Nam','1990-05-17',100000000,'0123456574',NULL,'Nhà quản lý',1),(148,'31203003617','Nguyen Van A','Nam','2003-02-14',12341,'0943055850','DL','Nhân viên điều phối',1),(149,'31203003617','Cương Phan Thế','Nam','1980-02-14',1000000,'0943055850','HCM','Nhân viên điều phối',1);
 /*!40000 ALTER TABLE `nhanvien` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `ADD_NHANVIENDIEUPHOI` AFTER INSERT ON `nhanvien` FOR EACH ROW BEGIN
+    -- Kiểm tra nếu dữ liệu đã được chèn thành công vào bảng NHANVIEN
+    IF NEW.ma_nhan_vien IS NOT NULL AND NEW.loai_nhan_vien = 'Nhân viên điều phối' THEN
+        -- Thêm ID vào bảng NHANVIENDIEUPHOI
+        INSERT INTO NHANVIENDIEUPHOI (ma_nhan_vien)
+        VALUES (NEW.ma_nhan_vien);
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `ADD_NHANVIENQUAY` AFTER INSERT ON `nhanvien` FOR EACH ROW BEGIN
+    -- Kiểm tra nếu dữ liệu đã được chèn thành công vào bảng NHANVIEN
+    IF NEW.ma_nhan_vien IS NOT NULL AND NEW.loai_nhan_vien = 'Nhân viên quầy' THEN
+        -- Thêm ID vào bảng NHANVIENQUAY
+        INSERT INTO NHANVIENQUAY (ma_nhan_vien)
+        VALUES (NEW.ma_nhan_vien);
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `ADD_NHANVIENKYTHUAT` AFTER INSERT ON `nhanvien` FOR EACH ROW BEGIN
+    -- Kiểm tra nếu dữ liệu đã được chèn thành công vào bảng NHANVIEN
+    IF NEW.ma_nhan_vien IS NOT NULL AND NEW.loai_nhan_vien = 'Nhân viên kỹ thuật' THEN
+        -- Thêm ID vào bảng NHANVIENKYTHUAT
+        INSERT INTO NHANVIENKYTHUAT (ma_nhan_vien)
+        VALUES (NEW.ma_nhan_vien);
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `ADD_NHAQUANLY` AFTER INSERT ON `nhanvien` FOR EACH ROW BEGIN
+    -- Kiểm tra nếu dữ liệu đã được chèn thành công vào bảng NHANVIEN
+    IF NEW.ma_nhan_vien IS NOT NULL AND NEW.loai_nhan_vien = 'Nhà quản lý' THEN
+        -- Thêm ID vào bảng NHAQUANLY
+				-- Nếu không quản lý rạp nào thì là tổng quản lý
+				IF NEW.rap_phu_trach IS NULL THEN
+	        INSERT INTO NHAQUANLY (ma_quan_ly, vai_tro)
+	        VALUES (NEW.ma_nhan_vien, 'Tổng quản lý');
+				ELSE 
+					INSERT INTO NHAQUANLY (ma_quan_lY, vai_tro)
+	        VALUES (NEW.ma_nhan_vien, 'Quản lý rạp');
+					UPDATE RAPPHIM
+					SET ma_nv_quan_ly = NEW.ma_nhan_vien where ma_rap_phim = NEW.rap_phu_trach;
+				END IF;
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `BEFORE_CapnhatNHANVIEN` BEFORE UPDATE ON `nhanvien` FOR EACH ROW BEGIN
+    -- Thay đổi nhân viên này sang nhân viên nọ
+    IF OLD.loai_nhan_vien <> NEW.loai_nhan_vien AND NEW.loai_nhan_vien LIKE 'Nhân viên%' THEN
+        -- Xoá dữ liệu trong bảng con
+        IF OLD.loai_nhan_vien = 'Nhân viên điều phối' THEN
+            DELETE FROM NHANVIENDIEUPHOI WHERE ma_nhan_vien = OLD.ma_nhan_vien;
+        END IF;
+
+        IF OLD.loai_nhan_vien = 'Nhân viên kỹ thuật' THEN
+            DELETE FROM NHANVIENKYTHUAT WHERE ma_nhan_vien = OLD.ma_nhan_vien;
+        END IF;
+
+        -- Thêm mới dữ liệu tương ứng với loại nhân viên mới
+        CASE NEW.loai_nhan_vien
+            WHEN 'Nhân viên điều phối' THEN
+                INSERT INTO NHANVIENDIEUPHOI (ma_nhan_vien) VALUES (OLD.ma_nhan_vien);
+            WHEN 'Nhân viên quầy' THEN
+                INSERT INTO NHANVIENQUAY (ma_nhan_vien) VALUES (OLD.ma_nhan_vien);
+            WHEN 'Nhân viên kỹ thuật' THEN
+                INSERT INTO NHANVIENKYTHUAT (ma_nhan_vien) VALUES (OLD.ma_nhan_vien);
+        END CASE;
+    END IF;
+
+		-- đổi từ nhân viên lên giám đốc
+    IF OLD.loai_nhan_vien <> NEW.loai_nhan_vien AND NEW.loai_nhan_vien = 'Nhà quản lý' THEN
+        -- Xoá dữ liệu trong bảng con
+        IF OLD.loai_nhan_vien = 'Nhân viên điều phối' THEN
+            DELETE FROM NHANVIENDIEUPHOI WHERE ma_nhan_vien = OLD.ma_nhan_vien;
+        END IF;
+
+        IF OLD.loai_nhan_vien = 'Nhân viên kỹ thuật' THEN
+            DELETE FROM NHANVIENKYTHUAT WHERE ma_nhan_vien = OLD.ma_nhan_vien;
+        END IF;
+
+        -- Thêm mới dữ liệu tương ứng với loại quản lý
+        IF NEW.rap_phu_trach IS NULL THEN
+            INSERT INTO NHAQUANLY (ma_quan_ly, vai_tro) VALUES (OLD.ma_nhan_vien, 'Tổng quản lý');
+        ELSE
+	           INSERT INTO NHAQUANLY (ma_quan_ly, vai_tro) VALUES (OLD.ma_nhan_vien, 'Quản lý rạp');
+			       UPDATE RAPPHIM 
+							 SET ma_nv_quan_ly = NEW.ma_nhan_vien WHERE ma_rap_phim = NEW.rap_phu_trach;
+				END IF;
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `nhanvien_bangcap`
@@ -623,6 +838,568 @@ LOCK TABLES `vephim` WRITE;
 INSERT INTO `vephim` VALUES (10000,'BD',201,'A01','2021-01-05 08:30:00'),(10002,'BD',201,'C01','2021-01-07 08:30:00'),(10015,'BD',201,'C01','2021-05-10 08:30:00'),(10017,'BD',201,'E05','2021-05-12 08:30:00'),(10045,'BD',202,'A01',NULL),(10046,'BD',202,'A05',NULL),(10047,'BD',202,'B04',NULL),(10001,'BD',202,'B01','2021-01-06 08:30:00'),(10016,'BD',202,'D05','2021-05-11 17:30:00'),(10030,'BD',202,'A01','2021-09-10 17:30:00'),(10031,'BD',202,'A03','2021-09-11 17:30:00'),(10032,'BD',202,'A04','2021-09-12 17:30:00'),(10123,'BD',202,'D04','2023-12-15 10:15:00'),(10124,'BD',202,'D04','2023-12-15 10:15:00'),(10120,'BD',202,'D03','2023-12-15 15:25:00'),(10121,'BD',202,'D04','2023-12-15 15:25:00'),(10122,'BD',202,'E05','2023-12-15 15:25:00'),(10125,'BD',202,'C04','2024-12-10 10:00:00'),(10126,'BD',202,'E05','2024-12-10 10:00:00'),(10051,'DL',201,'B01',NULL),(10052,'DL',201,'B03',NULL),(10006,'DL',201,'E01','2021-01-07 08:30:00'),(10007,'DL',201,'D04','2021-01-08 08:30:00'),(10021,'DL',201,'A04','2021-05-14 08:30:00'),(10022,'DL',201,'B01','2021-05-15 08:30:00'),(10036,'DL',201,'A03','2021-09-14 08:30:00'),(10037,'DL',201,'E03','2021-09-15 08:30:00'),(10053,'DL',202,'C05',NULL),(10008,'DL',202,'B03','2021-01-09 17:30:00'),(10023,'DL',202,'C03','2021-05-16 17:30:00'),(10038,'DL',202,'B04','2021-05-16 17:30:00'),(10048,'HCM',201,'A01',NULL),(10003,'HCM',201,'A02','2021-01-06 08:30:00'),(10018,'HCM',201,'E01','2021-05-13 08:30:00'),(10019,'HCM',201,'E02','2021-05-14 08:30:00'),(10020,'HCM',201,'E03','2021-05-15 08:30:00'),(10033,'HCM',201,'A03','2021-09-13 08:30:00'),(10049,'HCM',202,'B01',NULL),(10004,'HCM',202,'B03','2021-01-07 17:30:00'),(10034,'HCM',202,'B01','2021-09-14 08:30:00'),(10050,'HCM',203,'E03',NULL),(10005,'HCM',203,'D02','2021-01-08 17:30:00'),(10035,'HCM',203,'E01','2021-09-15 08:30:00'),(10057,'TG',201,'B04',NULL),(10058,'TG',201,'B05',NULL),(10059,'TG',201,'C05',NULL),(10012,'TG',201,'A04','2021-01-09 08:30:00'),(10014,'TG',201,'E01','2021-01-11 08:30:00'),(10027,'TG',201,'A02','2021-05-18 08:30:00'),(10028,'TG',201,'B02','2021-05-19 08:30:00'),(10042,'TG',201,'A01','2021-09-16 08:30:00'),(10043,'TG',201,'A03','2021-09-17 08:30:00'),(10044,'TG',201,'E05','2021-09-18 08:30:00'),(10013,'TG',202,'E04','2021-01-10 17:30:00'),(10029,'TG',202,'C02','2021-05-20 17:30:00'),(10054,'TTH',201,'A01',NULL),(10055,'TTH',201,'A02',NULL),(10009,'TTH',201,'B05','2021-01-08 08:30:00'),(10024,'TTH',201,'A05','2021-05-16 08:30:00'),(10039,'TTH',201,'A01','2021-09-15 08:30:00'),(10056,'TTH',202,'E01',NULL),(10010,'TTH',202,'C04','2021-01-09 17:30:00'),(10011,'TTH',202,'C05','2021-01-10 17:30:00'),(10025,'TTH',202,'D04','2021-05-17 17:30:00'),(10026,'TTH',202,'E03','2021-05-18 17:30:00'),(10040,'TTH',202,'A02','2021-09-16 17:30:00'),(10041,'TTH',202,'B02','2021-09-17 17:30:00');
 /*!40000 ALTER TABLE `vephim` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Dumping routines for database 'cinestar'
+--
+/*!50003 DROP FUNCTION IF EXISTS `RatesBetweenFoodandFilm` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` FUNCTION `RatesBetweenFoodandFilm`(thang_truy_van INT, nam_truy_van Year) RETURNS decimal(4,2)
+    DETERMINISTIC
+BEGIN
+    DECLARE ty_le DECIMAL(4,2);
+	DECLARE countVephim INT;
+    DECLARE countSanpham INT;
+
+    -- Kiểm tra giá trị của tháng
+    IF thang_truy_van IS NULL OR thang_truy_van <= 1 OR thang_truy_van > 12 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Tháng không hợp lệ!';
+        RETURN null;
+    END IF;
+
+    -- Kiểm tra giá trị của năm
+    IF nam_truy_van IS NULL OR nam_truy_van <= 2019 OR nam_truy_van > YEAR(CURDATE()) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Năm không hợp lệ!';
+        RETURN null;
+    END IF;
+
+	SELECT count(*), (select Count(*) from Z where Z.loai_san_pham = "Vé phim") 
+    into countSanpham, countVephim 
+    from (
+		SELECT id_san_pham, loai_san_pham
+		FROM ((
+			SELECT * FROM hoadon 
+            WHERE MONTH(ngay_giao_dich) = thang_truy_van AND YEAR(ngay_giao_dich) = nam_truy_van 
+            and trang_thai = "Đã thanh toán"
+		) AS X
+		NATURAL JOIN hoadon_baogom_sanpham AS Y
+		JOIN sanpham ON Y.id_san_pham = sanpham.id_sanpham)) as Z;
+		
+	if countVephim > 0 then
+		set ty_le = (countSanpham - countVephim) / countVephim * 100;
+	else
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Không thể tính toán vì số vé phim bằng 0!';
+		RETURN null;
+	end if;
+	-- drop temporary table if exists Z;
+    RETURN ty_le;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CapnhatNhanVien` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CapnhatNhanVien`(
+    IN p_ma_nhan_vien INT,
+    IN p_cccd CHAR(12),
+    IN p_ten VARCHAR(50) CHARACTER SET UTF8MB4,
+    IN p_gioi_tinh VARCHAR(5) CHARACTER SET UTF8MB4,
+    IN p_nam_sinh DATE,
+    IN p_luong DECIMAL(10,0),
+    IN p_sdt VARCHAR(12) CHARACTER SET UTF8MB4,
+    IN p_rap_phu_trach VARCHAR(20) CHARACTER SET UTF8MB4,
+    IN p_loai_nhan_vien VARCHAR(30) CHARACTER SET UTF8MB4,
+	IN p_trang_thai boolean
+)
+upd: BEGIN
+	-- Kiểm tra xem nhân viên có tồn tại không
+    DECLARE today DATE;
+	DECLARE loai_nhan_vien_cu VARCHAR(30) CHARACTER SET UTF8MB4;
+	DECLARE rap_phu_trach_cu VARCHAR(20) CHARACTER SET UTF8MB4;
+	Declare a decimal(10,0);
+
+		-- Sử dụng SELECT INTO để gán giá trị cho biến
+	SELECT loai_nhan_vien, rap_phu_trach
+	INTO loai_nhan_vien_cu, rap_phu_trach_cu
+	FROM NHANVIEN
+	WHERE ma_nhan_vien = p_ma_nhan_vien;
+	
+	-- Kiểm tra xem nhân viên có đủ 18 tuổi chưa
+	SET today = CURDATE();
+    IF DATEDIFF(today, p_nam_sinh) < 6570 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Nhân viên phải đủ 18 tuổi.';
+        LEAVE upd;
+    END IF;
+		
+		-- Kiểm tra số điện thoại (phải dài >= 10 số và chữ số đầu là 0)
+    IF LENGTH(p_sdt) < 10 OR SUBSTRING(p_sdt, 1, 1) <> '0' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Số điện thoại không hợp lệ.';
+        LEAVE upd;
+    END IF;
+
+		-- Kiểm tra lương nhân viên nhỏ hơn lương giám đốc
+	select min(luong) into a
+	from NHANVIEN
+	where loai_nhan_vien = "Nhà quản lý";
+
+	IF p_loai_nhan_vien <> "Nhà quản lý" and a IS NOT NULL and p_luong >= a THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Lương nhân viên sao có thể lớn hơn bằng lương giám đốc!!!';
+        LEAVE upd;
+    END IF;
+		
+		-- TO NHỎ CHUYỆN THĂNG CHỨC
+		-- Từ nhân viên lên quản lý rạp
+	IF p_loai_nhan_vien = "Nhà quản lý" AND loai_nhan_vien_cu LIKE "Nhân viên%" THEN
+        IF p_rap_phu_trach is null then
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Bạn phải lên quản lý rạp trước khi lên tổng!!!!';
+			LEAVE upd;
+		END IF;
+-- Sử dụng COUNT(*) để kiểm tra sự tồn tại của quản lý
+		IF (SELECT COUNT(*) FROM NHANVIEN WHERE loai_nhan_vien = "Nhà quản lý" AND 
+				rap_phu_trach = p_rap_phu_trach AND trang_thai = 1) <> 0 THEN
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Đã có quản lý phụ trách rạp này!!!';
+			LEAVE upd;
+		END IF;
+	END IF;
+	
+		-- Từ quản lý rạp lên tổng
+	IF loai_nhan_vien_cu = "Nhà quản lý" and rap_phu_trach_cu is not NULL 
+		and p_rap_phu_trach is NULL then
+		IF (SELECT COUNT(*) FROM NHANVIEN WHERE loai_nhan_vien = "Nhà quản lý" AND 
+			rap_phu_trach is NULL AND trang_thai = 1) <> 0 THEN
+	        SIGNAL SQLSTATE '45000'
+	        SET MESSAGE_TEXT = 'Không thăng chức được vì hiện đã có một quản lý tổng!!!';
+	        LEAVE upd;
+	    END IF;
+	END IF;
+		-- Thực hiện UPDATE
+    UPDATE NHANVIEN
+    SET
+        cccd = p_cccd,
+        ten = p_ten,
+        gioi_tinh = p_gioi_tinh,
+        nam_sinh = p_nam_sinh,
+        luong = p_luong,
+        sdt = p_sdt,
+        rap_phu_trach = p_rap_phu_trach,
+        loai_nhan_vien = p_loai_nhan_vien,
+		trang_thai = p_trang_thai
+    WHERE ma_nhan_vien = p_ma_nhan_vien;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `filterPhim` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `filterPhim`(in input_theloai VARCHAR(20), 
+				in start_date DATE, in end_date DATE)
+BEGIN
+	IF input_theloai is NULL then
+		if start_date is null or end_date is null then 
+			SELECT ma_phim
+			FROM phim;
+	    else
+	    	SELECT ma_phim
+			FROM  suatchieu
+			WHERE ngay_gio_chieu BETWEEN start_date AND end_date
+			group by ma_phim;
+	    end if; 
+	ELSE 
+		if start_date is null or end_date is null then 
+			SELECT phim.ma_phim
+			FROM phim_thuoc_theloai, phim
+			WHERE ten_the_loai = input_theloai and phim_thuoc_theloai.ma_phim = phim.ma_phim;
+		else
+			SELECT phim.ma_phim
+			FROM PHIM NATURAL JOIN phim_thuoc_theloai NATURAL JOIN suatchieu
+			WHERE ngay_gio_chieu BETWEEN start_date AND end_date 
+				AND ten_the_loai = input_theloai
+			group by phim.ma_phim;
+		end if;
+	END IF;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `findKH` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `findKH`(in intongia DECIMAL(10,0), 
+				in indate1 DATE, in indate2 DATE)
+BEGIN
+	SELECT hoadon.ma_khach_hang, ten, sdt, ma_hoa_don, thoi_gian_giao_dich, ngay_giao_dich, tong_gia
+	FROM hoadon INNER JOIN khachhang ON (hoadon.ma_khach_hang = khachhang.ma_khach_hang)
+	WHERE trang_thai = 'Đã thanh toán' AND 
+	      ngay_giao_dich BETWEEN indate1 AND indate2 AND
+	      tong_gia > intongia;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `ThemNhanVien` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ThemNhanVien`(
+    IN p_cccd CHAR(12),
+    IN p_ten VARCHAR(50) CHARACTER SET UTF8MB4,
+    IN p_gioi_tinh VARCHAR(5) CHARACTER SET UTF8MB4,
+    IN p_nam_sinh DATE,
+    IN p_sdt VARCHAR(12) CHARACTER SET UTF8MB4,
+    IN p_dia_chi VARCHAR(100) CHARACTER SET UTF8MB4,
+    IN p_loai_nhan_vien VARCHAR(30) CHARACTER SET UTF8MB4,
+    IN p_luong DECIMAL(10,0),
+    IN p_rap_phu_trach VARCHAR(20) CHARACTER SET UTF8MB4,
+	IN p_bang_cap VARCHAR(100) CHARACTER SET UTF8MB4,
+	IN p_thu_trong_tuan varchar(20),
+	IN p_tg_bat_dau time,
+	IN p_tg_ket_thuc time
+)
+them: BEGIN
+    DECLARE today DATE;
+	DECLARE a decimal(10,0); 
+	DECLARE ma_nhan_vien_moi INT;
+    
+    SET today = CURDATE();
+    -- Kiểm tra xem nhân viên có đủ 18 tuổi chưa
+    IF DATEDIFF(today, p_nam_sinh) < 6570 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Nhân viên phải đủ 18 tuổi.';
+        LEAVE them;
+    END IF;
+		
+		-- Kiểm tra số điện thoại (phải dài >= 10 số và chữ số đầu là 0)
+    IF LENGTH(p_sdt) < 10 OR SUBSTRING(p_sdt, 1, 1) <> '0' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Số điện thoại không hợp lệ.';
+        LEAVE them;
+    END IF;
+    
+	-- Kiểm tra lương nhân viên nhỏ hơn lương giám đốc
+	Select min(luong) into a
+	from NHANVIEN
+	where loai_nhan_vien = "Nhà quản lý" and trang_thai = 1;
+
+	IF p_loai_nhan_vien <> "Nhà quản lý" and a IS NOT NULL and p_luong >= a THEN
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Lương nhân viên sao có thể lớn hơn bằng lương giám đốc!!!';
+		LEAVE them;
+	END IF;
+		-- Kiểm tra nếu chèn quản lý, thì chưa có hoặc có nhưng đã nghỉ
+	
+	if p_loai_nhan_vien = "Nhà quản lý" then
+		if p_luong < 10000000 then
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Quản lý lương phải từ 10 triệu trở lên!!!';
+			LEAVE them;
+        end if;
+		if p_rap_phu_trach is null  then-- muốn chèn tổng quản lý 
+			if p_luong < 50000000 then
+				SIGNAL SQLSTATE '45000'
+				SET MESSAGE_TEXT = 'Tổng quản lý lương phải từ 50 triệu!!!';
+				LEAVE them;
+			end if;
+			if (select count(*) from NHANVIEN where rap_phu_trach is null 
+				and trang_thai = 1) <> 0 then
+				SIGNAL SQLSTATE '45000'
+				SET MESSAGE_TEXT = 'Đã có một quản lý tổng, không thể thêm!!!';
+				LEAVE them;
+			end if;
+		else
+			-- muốn chèn quản lý
+			if (select count(*) from NHANVIEN where loai_nhan_vien = "Nhà quản lý" and 
+				rap_phu_trach = p_rap_phu_trach and trang_thai = 1) <> 0 then
+				SIGNAL SQLSTATE '45000'
+				SET MESSAGE_TEXT = 'Đã có một quản lý ở rạp này, không thể thêm!!!';
+				LEAVE them;
+			end if;
+		end if;
+	end if;
+    -- Thực hiện INSERT
+    INSERT INTO NHANVIEN (
+        cccd, ten, gioi_tinh, nam_sinh,
+        luong, sdt, rap_phu_trach,
+        loai_nhan_vien, trang_thai
+    ) VALUES (
+        p_cccd, p_ten, p_gioi_tinh, p_nam_sinh,
+        p_luong, p_sdt, p_rap_phu_trach,
+        p_loai_nhan_vien, 1
+    );
+		-- Lấy ID mới chèn vào bảng NHANVIEN
+    SET ma_nhan_vien_moi = LAST_INSERT_ID();
+
+    -- Thêm thông tin về bằng cấp vào bảng bang_cap
+    INSERT INTO NHANVIEN_BANGCAP (ma_nhan_vien, bang_cap)
+    VALUES (ma_nhan_vien_moi, p_bang_cap);
+		
+	INSERT INTO NHANVIEN_DIACHI (ma_nhan_vien, dia_chi)
+    VALUES (ma_nhan_vien_moi, p_dia_chi);
+	
+	INSERT INTO NHANVIEN_THOIGIANLAMVIEC (ma_nhan_vien, thu_trong_tuan, tg_bat_dau, tg_ket_thuc)
+    VALUES (ma_nhan_vien_moi, p_thu_trong_tuan, p_tg_bat_dau, p_tg_ket_thuc);
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `themvephim` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `themvephim`(
+	in p_ma_rap_phim varchar(20), 
+	in p_ma_so_phong int, 
+	in p_ma_so_ghe varchar(5), 
+	in p_ngay_gio_chieu datetime,
+	in p_ma_hoadon int)
+begin
+	DECLARE id_sanpham_moi INT;
+
+	insert into sanpham (loai_san_pham) values ('Vé phim');
+	SET id_sanpham_moi = LAST_INSERT_ID();
+
+	insert into vephim values (id_sanpham_moi, p_ma_rap_phim, p_ma_so_phong, p_ma_so_ghe, p_ngay_gio_chieu);
+    insert into hoadon_baogom_sanpham values (p_ma_hoadon, id_sanpham_moi, 1);
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `topNBranchRevenue` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `topNBranchRevenue`(IN topNumber INT, IN thang_truy_van INT, IN nam_truy_van YEAR)
+nth: BEGIN
+    -- Kiểm tra giá trị của topNumber
+    DECLARE DT_TB float;
+    IF topNumber > (SELECT COUNT(*) FROM RAPPHIM) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Số top nhiều hơn số rạp! Hãy thử lại.';
+        LEAVE nth;
+    END IF;
+
+		 -- Kiểm tra giá trị của tháng
+		IF thang_truy_van IS NULL OR thang_truy_van < 1 OR thang_truy_van > 12 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Tháng không hợp lệ!';
+        LEAVE nth;
+    END IF;
+
+    -- Kiểm tra giá trị của năm
+    IF nam_truy_van IS NULL OR nam_truy_van <= 2019 OR nam_truy_van > YEAR(CURDATE()) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Năm không hợp lệ!';
+        LEAVE nth;
+    END IF;
+		
+	SELECT SUM(hoadon.tong_gia) / (SELECT COUNT(*) FROM rapphim) INTO DT_TB
+	FROM hoadon
+	WHERE YEAR(hoadon.ngay_giao_dich) = nam_truy_van AND MONTH(hoadon.ngay_giao_dich) = thang_truy_van AND hoadon.trang_thai = 'Đã thanh toán';
+
+	Select rapphim.ma_rap_phim, X.tong_doanh_thu 
+    from 
+		(SELECT rap_xuat, SUM(tong_gia) as tong_doanh_thu
+		FROM hoadon 
+		WHERE YEAR(ngay_giao_dich) = nam_truy_van and MONTH(ngay_giao_dich) = thang_truy_van and trang_thai = "Đã thanh toán"
+		GROUP BY rap_xuat 
+        HAVING SUM(tong_gia) > DT_TB
+		ORDER BY SUM(tong_gia) DESC
+        LIMIT topNumber) as X, rapphim 
+	where rap_xuat = ma_rap_phim
+	order by X.tong_doanh_thu DESC;
+    
+end ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `topNFavoriteMovies` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `topNFavoriteMovies`(IN topNumber INT, IN nam_truy_van YEAR)
+nfm: BEGIN
+	DECLARE Sove_TB float;
+    
+	IF topNumber > (SELECT COUNT(*) FROM PHIM) THEN
+		SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Số top nhiều hơn số phim! Hãy thử lại.';
+		LEAVE nfm;
+    END IF;
+
+	IF nam_truy_van IS NULL OR nam_truy_van <= 2019 OR nam_truy_van > YEAR(CURDATE()) THEN 
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Năm không hợp lệ!';
+        LEAVE nfm;
+    END IF;
+
+    -- SELECT Z.*, GROUP_CONCAT(phim_thuoc_theloai.ten_the_loai SEPARATOR ', ') AS cac_the_loai 
+    SELECT Z.ma_phim, Z.ten, Z.tong_ve, GROUP_CONCAT(phim_thuoc_theloai.ten_the_loai order by Z.ma_phim SEPARATOR ', ') AS cac_the_loai
+    FROM (
+        SELECT X.ma_phim, X.ten, Count(ma_ve_phim) AS tong_ve 
+        FROM ((
+            SELECT * 
+            FROM phim 
+            WHERE year(phim.ngay_khoi_chieu) = nam_truy_van) AS X
+		NATURAL JOIN 
+            (SELECT * FROM suatchieu
+            NATURAL JOIN vephim
+        ) AS Y) 
+        group by X.ma_phim, X.ten
+		HAVING Count(ma_ve_phim) > 0
+        ORDER BY tong_ve DESC
+    ) AS Z, phim_thuoc_theloai
+    where Z.ma_phim = phim_thuoc_theloai.ma_phim
+    GROUP BY Z.ma_phim, Z.ten
+    ORDER BY tong_ve DESC
+    LIMIT topNumber;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `XoaNhanvien` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `XoaNhanvien`(IN p_ma_nhan_vien INT)
+xoa: BEGIN
+  DECLARE check_exist INT;
+	declare a varchar(30) character set utf8mb4;
+	declare b VARCHAR(20) CHARACTER SET UTF8MB4;
+
+    -- Kiểm tra xem nhân viên có tồn tại không
+    SELECT COUNT(*) INTO check_exist
+    FROM NHANVIEN
+    WHERE ma_nhan_vien = p_ma_nhan_vien;
+
+    IF check_exist = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Nhân viên không tồn tại.';
+        LEAVE xoa;
+    ELSE
+        -- Xóa nhân viên
+		select loai_nhan_vien, rap_phu_trach into a, b from NHANVIEN 
+			where ma_nhan_vien = p_ma_nhan_vien; 
+		
+		-- Chỉ được xóa nhân viên kỹ thuật và điều phối
+		if a = "Nhân viên điều phối" then
+			 DELETE FROM NHANVIENDIEUPHOI WHERE ma_nhan_vien = p_ma_nhan_vien;
+			 DELETE FROM NHANVIEN WHERE ma_nhan_vien = p_ma_nhan_vien;
+		elseif a = "Nhân viên kỹ thuật" then
+			DELETE FROM NHANVIENKYTHUAT WHERE ma_nhan_vien = p_ma_nhan_vien;
+			DELETE FROM NHANVIEN WHERE ma_nhan_vien = p_ma_nhan_vien;
+		elseif a = "Nhân viên quầy" then
+			DELETE FROM NHANVIENQUAY WHERE ma_nhan_vien = p_ma_nhan_vien;
+			DELETE FROM NHANVIEN WHERE ma_nhan_vien = p_ma_nhan_vien;
+		else
+			-- Các loại còn lại (quản lý) set trạng thái nghỉ (0)
+			update NHANVIEN set trang_thai = 0 WHERE ma_nhan_vien = p_ma_nhan_vien;
+			if a = "Nhà quản lý" and b is not null then
+				if (SELECT Count(*) from NHANVIEN where loai_nhan_vien = "Nhà quản lý"
+					and rap_phu_trach = b and trang_thai = 1) <> 0 then
+					delete from NHAQUANLY where ma_quan_ly = p_ma_nhan_vien;
+					delete from NHANVIEN where ma_nhan_vien = p_ma_nhan_vien;
+				else
+					SIGNAL SQLSTATE '45000'
+					SET MESSAGE_TEXT = 'Chưa có quản lý rạp mới thay thế. Chưa thể xóa. Chuyển trạng thái về nghỉ';
+					LEAVE xoa;
+				end if;
+			end if;
+			if a = "Nhà quản lý" and b is null then
+				if (SELECT Count(*) from NHANVIEN where loai_nhan_vien = "Nhà quản lý" 
+					and rap_phu_trach is null and trang_thai = 1) <> 0 then
+					delete from NHAQUANLY where ma_quan_ly = p_ma_nhan_vien;
+					delete from NHANVIEN where ma_nhan_vien = p_ma_nhan_vien;
+				else
+					SIGNAL SQLSTATE '45000'
+					SET MESSAGE_TEXT = 'Chưa có tổng quản lý mới thay thế. Chưa thể xóa. Chuyển trạng thái về nghỉ!';
+					LEAVE xoa;
+				end if;
+			end if;
+		end if;
+    END IF;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -633,4 +1410,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-04-17 22:04:10
+-- Dump completed on 2024-05-10 22:08:03

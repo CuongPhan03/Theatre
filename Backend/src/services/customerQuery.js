@@ -2,7 +2,7 @@ const connection = require('../config/database');
 class customerQuery {
     async getCustomer(name, phone) {
         let [results] = await connection.query(
-            `SELECT ma_khach_hang, diem_tich_luy FROM KHACHHANG
+            `SELECT ma_khach_hang, diem_tich_luy FROM khachhang
              WHERE ten = ? AND sdt = ?`,
             [name, phone],
         );
@@ -10,7 +10,7 @@ class customerQuery {
     }
     async addCustomer(name, phone) {
         let [results] = await connection.query(
-            `INSERT INTO KHACHHANG  (ten, sdt, diem_tich_luy)
+            `INSERT INTO khachhang (ten, sdt, diem_tich_luy)
              VALUES (?, ?, 0)`,
             [name, phone],
         );
@@ -30,7 +30,7 @@ class customerQuery {
     }
     async createBill(theatreId) {
         let [results] = await connection.query(
-            `INSERT INTO HOADON (tong_gia, trang_thai, rap_xuat) 
+            `INSERT INTO hoadon (tong_gia, trang_thai, rap_xuat) 
              VALUES (${0}, 'Chưa thanh toán', ?)`,
             [theatreId],
         );
@@ -38,7 +38,7 @@ class customerQuery {
     }
     async getDiscount() {
         let [results] = await connection.query(
-            `SELECT ma_dot_km, ten_dot, phan_tram_duoc_giam, tien_duoc_giam FROM KHUYENMAI
+            `SELECT ma_dot_km, ten_dot, phan_tram_duoc_giam, tien_duoc_giam FROM khuyenmai
              WHERE so_luot_su_dung > 0 
              AND NOW() BETWEEN ngay_bat_dau AND ngay_ket_thuc`,
         );
@@ -46,7 +46,7 @@ class customerQuery {
     }
     async setCusIdBill(billId, cusId) {
         await connection.query(
-            `UPDATE HOADON SET ma_khach_hang = ? , trang_thai = 'Đã thanh toán', thoi_gian_giao_dich = CURTIME(), ngay_giao_dich = CURDATE()
+            `UPDATE hoadon SET ma_khach_hang = ? , trang_thai = 'Đã thanh toán', thoi_gian_giao_dich = CURTIME(), ngay_giao_dich = CURDATE()
              WHERE ma_hoa_don = ?`,
             [cusId, billId],
         );
@@ -55,28 +55,28 @@ class customerQuery {
         await connection.query(`CALL themvephim(?, ?, ?, ?, ?)`, [theatreId, screen, chairId, date, billId]);
     }
     async addFoodBill(billId, foodId, quantity) {
-        await connection.query(`INSERT INTO HOADON_BAOGOM_SANPHAM VALUES (?, ?, ?)`, [billId, foodId, quantity]);
+        await connection.query(`INSERT INTO hoadon_baogom_sanpham VALUES (?, ?, ?)`, [billId, foodId, quantity]);
     }
     async useDiscount(billId, code, discMoney) {
         await connection.query(
-            `UPDATE HOADON SET tong_gia = tong_gia - ?, ma_dot_km = ?
+            `UPDATE hoadon SET tong_gia = tong_gia - ?, ma_dot_km = ?
              WHERE ma_hoa_don = ?`,
             [discMoney, code, billId],
         );
         await connection.query(
-            `UPDATE KHUYENMAI SET so_luot_su_dung = so_luot_su_dung - 1
+            `UPDATE khuyenmai SET so_luot_su_dung = so_luot_su_dung - 1
              WHERE ma_dot_km = ?`,
             [code],
         );
     }
     async usePoints(billId, pointMoney, usePoints, cusId) {
         await connection.query(
-            `UPDATE HOADON SET tong_gia = tong_gia - ? 
+            `UPDATE hoadon SET tong_gia = tong_gia - ? 
              WHERE ma_hoa_don = ?`,
             [pointMoney, billId],
         );
         await connection.query(
-            `UPDATE KHACHHANG SET diem_tich_luy = diem_tich_luy - ?
+            `UPDATE khachhang SET diem_tich_luy = diem_tich_luy - ?
              WHERE ma_khach_hang = ?`,
             [usePoints, cusId],
         );
